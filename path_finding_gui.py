@@ -6,12 +6,12 @@ import json
 import click 
 import time
 import tkinter as tk
-import random
+
 import json
 
 
 WIDTH1 = 1300
-WIDTH2 = 1000
+WIDTH2 = 700
 WIDTH = 1000
 WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
 pygame.display.set_caption("A* Sorbitermica")
@@ -30,16 +30,16 @@ TURQUOISE = (64, 224, 208)
 
 def get_mandatory_points(mandatory_points, select_all=False):
     prefixed_points = {
-        "Chiave a tubo": ((30, 30)),
-        "Pompa ad aria compressa": (random.randint(1, 99), random.randint(1, 99)),
-        "Tagliatubi": (random.randint(1, 99), random.randint(1, 99)),
-        "Idropulitrice": (random.randint(1, 99), random.randint(1, 99)),
-        "Chiave a catena": (random.randint(1, 99), random.randint(1, 99)),
-        "Fresa a mano": (random.randint(1, 99), random.randint(1, 99)),
-        "Torcia a gas": (random.randint(1, 99), random.randint(1, 99)),
-        "Guarnizioni assortite": (random.randint(1, 99), random.randint(1, 99)),
-        "Pinze": (random.randint(1, 99), random.randint(1, 99)),
-        "Rubinetto a sfera": (random.randint(1, 99), random.randint(1, 99))
+        "Chiave a tubo": ((16, 20)),
+        "Pompa ad aria compressa": ((60, 24)),
+        "Tagliatubi": ((37, 48)),
+        "Idropulitrice": ((80, 20)),
+        "Chiave a catena": ((35, 66)),
+        "Fresa a mano": ((35,20)),
+        "Torcia a gas": ((3,49)),
+        "Guarnizioni assortite": ((75,3)),
+        "Pinze": ((80,66)),
+        "Rubinetto a sfera": ((26,7))
     }
 
     root = tk.Tk()
@@ -158,21 +158,23 @@ class Spot:
         return "({},{})".format(self.row, self.col)
 
 def draw_grid(win, rows, width):
+    
     gap = width // rows
     for i in range(rows):
-        pygame.draw.line(win, GREY, (0, i * gap), (width, i * gap))
+        pygame.draw.line(win, WHITE, (0, i * gap), (width, i * gap))
         for j in range(rows):
-            pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, width))
+            pygame.draw.line(win, WHITE, (j * gap, 0), (j * gap, width))
 
 def draw(win, grid, rows, width):
     win.fill(WHITE)
 
     for row in grid:
         for spot in row:
+            
             spot.draw(win)
             
 
-    draw_grid(win, rows, width)
+    #draw_grid(win, rows, width)
 
     pygame.display.update()
 
@@ -258,7 +260,8 @@ def make_grid_from_file(filename, width, mandatory_points=None):
 
     return grid, start, end, rows, barrier, mandatory_points
 
-def mark_spots(start, end, grid, plan):
+def mark_spots(start, end, grid, plan,win):
+    
     x = start.row
     y = start.col
     for a in plan:
@@ -275,16 +278,27 @@ def mark_spots(start, end, grid, plan):
             # Ignore marking over grey spots and the end spot
             if current_spot.is_points() or current_spot.is_end():
                continue
+            
             current_spot.make_path()
+            current_spot.make_path()
+            start = current_spot
+            # Aggiorna la visualizzazione della finestra
+            draw(win, grid, len(grid), len(grid[0]))
+            pygame.display.update()
+            pygame.time.wait(15)  # Attendi per un breve periodo
             
     # Ensure end spot remains marked as end
     
     end.make_end()      
-    start.make_start()  
+    
+
 
 def mark_expanded(exp, grid):
     for e in exp:
-        grid[e[0]][e[1]].make_closed()
+        current_spot = grid[e[0]][e[1]]
+        if current_spot.is_points() or current_spot.is_end():
+               continue
+        current_spot.make_closed()
 
 
 def save_to_file(grid, start, end, filename="temp.json"):
@@ -393,7 +407,7 @@ def main(width, rows, search_algorithm, filename):
         draw(win, grid, rows, width)
 
         save_map_button.show()
-        load_map_button.show()
+        #load_map_button.show()
         pygame.display.update()
         
 
@@ -426,7 +440,10 @@ def main(width, rows, search_algorithm, filename):
                     row, col = get_clicked_pos(pos, rows, width)
                     spot = grid[row][col]
                     spot.reset()
-                    wall.remove((row,col))
+                    try:
+                        wall.remove((row,col))
+                    except KeyError:
+                        print("La posizione ({},{}) non esiste in wall.".format(row, col))
                     if spot == start:
                         start = None
                     elif spot == end:
@@ -454,6 +471,7 @@ def main(width, rows, search_algorithm, filename):
                     initial_point = (start.row, start.col)
                     final_point = (end.row,end.col)
                 if mandatory_points.__len__() != 0:
+                    
                     # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
                     prossimo_punto = trova_punto_vicino(initial_point,mandatory_points)
                     p = PathFinding(world,(initial_point),(prossimo_punto))
@@ -496,9 +514,10 @@ def main(width, rows, search_algorithm, filename):
                 if all_plan is not None:
                     print(all_plan)
                     print("Cost of the plan is: {}".format(len(all_plan)))
-                    mark_spots(start,end,grid,all_plan)
-                    
+
+                    mark_spots(start, end, grid,all_plan,win)
                     draw(win, grid, rows, width)
+                    pygame.display.update()  
                     
                 if event.key == pygame.K_c:
                     
