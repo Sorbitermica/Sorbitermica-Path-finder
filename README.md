@@ -1,2 +1,1 @@
-ciao come va figa 
-Va bene 
+Repositery ufficiale A* della sorbitermica (Giuliano Ronchi e Davide Sorbi) 
