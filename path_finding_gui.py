@@ -8,6 +8,7 @@ import time
 import tkinter as tk
 import random
 import json
+#prova
 
 WIDTH1 = 1300
 WIDTH2 = 1000
