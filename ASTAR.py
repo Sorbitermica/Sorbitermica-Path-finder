@@ -11,7 +11,7 @@ class AstarNode(Node):
         return (self.g + self.h) < (other.g + other.h)
 
 class AStar(SearchAlgorithm):
-    def __init__(self, heuristic=lambda x, y: 0, view=True, w=0.5):
+    def __init__(self, heuristic=lambda x, y: 0, view=True, w=1):
         self.heuristic = heuristic
         self.w = w
         super().__init__(view)

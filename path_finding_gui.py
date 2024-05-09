@@ -38,7 +38,7 @@ def get_mandatory_points(mandatory_points, select_all=False):
         "Torcia a gas": ((3,49)),
         "Guarnizioni assortite": ((75,3)),
         "Pinze": ((80,66)),
-        "Rubinetto a sfera": ((26,7))
+        "Rubinetto a sfera": ((15,3))
     }
 
     root = tk.Tk()
