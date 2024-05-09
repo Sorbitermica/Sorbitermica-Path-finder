@@ -190,36 +190,6 @@ def make_grid(rows, width, mandatory_points=None):
 
     return grid
 
-def make_grid_from_file(filename, width):
-    f = open(filename)
-
-    data = json.load(f)
-
-    rows = data['rows']
-    grid = []
-    gap = width // rows
-    
-    start = (data['start'][0],data['start'][1])
-    end = (data['end'][0],data['end'][1])
-    
-    barrier = {(ele[0],ele[1]) for ele in data['barrier']}
-    
-    for i in range(rows):
-        grid.append([])
-        for j in range(rows):
-            spot = Spot(i, j, gap)
-            if (i,j) in barrier:
-                spot.make_barrier()
-            elif (i,j) == start:
-                spot.make_start()
-                start = spot
-            elif (i,j) == end:
-                spot.make_end()
-                end = spot
-            grid[i].append(spot)
-
-    return grid, start, end, rows, barrier
-
 def get_clicked_pos(pos, rows, width):
     gap = width // rows
     y, x = pos
