@@ -26,7 +26,7 @@ PURPLE = (128, 0, 128)
 ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
-
+#
 def get_mandatory_points(mandatory_points, select_all=False):
     prefixed_points = {
         "Chiave a tubo": ((16, 20)),
