@@ -7,13 +7,12 @@ import click
 import time
 import tkinter as tk
 import json
+import random
 
 
-WIDTH1 = 1300
+WIDTH1 = 1000
 WIDTH2 = 700
 WIDTH = 1000
-WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
-pygame.display.set_caption("A* Sorbitermica")
 pygame.init()
 
 RED = (255, 0, 0)
@@ -26,6 +25,7 @@ PURPLE = (128, 0, 128)
 ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
+colore = (0, 0, 0)
 
 def get_mandatory_points(mandatory_points, select_all=False):
     prefixed_points = {
@@ -279,7 +279,6 @@ def mark_spots(start, end, grid, plan,win):
                continue
             
             current_spot.make_path()
-            current_spot.make_path()
             start = current_spot
             # Aggiorna la visualizzazione della finestra
             draw(win, grid, len(grid), len(grid[0]))
@@ -346,8 +345,8 @@ class Button:
         self.surface.blit(self.text, (0, 0))
         self.rect = pygame.Rect(self.x, self.y, self.size[0], self.size[1])
  
-    def show(self):
-        WIN.blit(self.surface, (self.x, self.y))
+    #def show(self):
+       # WIN.blit(self.surface, (self.x, self.y))
  
     def click(self, event, grid, start, end):
         x, y = pygame.mouse.get_pos()
@@ -381,7 +380,7 @@ clock = pygame.time.Clock()
 @click.option('-f', '--filename', default = 'tempmap.json', help = "Initialize map with data from file")
 
 def main(width, rows, search_algorithm, filename):
-    win = WIN
+    
     start = None
     end = None
     ROWS = rows
@@ -390,7 +389,8 @@ def main(width, rows, search_algorithm, filename):
     points.update(mandatory_points)
     
     get_mandatory_points(mandatory_points)
-    
+    win = pygame.display.set_mode((WIDTH1, WIDTH2))
+    pygame.display.set_caption("A* Sorbitermica")
     search_algorithm == 'ASTAR'
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
@@ -401,11 +401,14 @@ def main(width, rows, search_algorithm, filename):
         wall = set()
     run = True
     
+    
+    
+    
     while run:
         
         draw(win, grid, rows, width)
 
-        save_map_button.show()
+        #save_map_button.show()
         #load_map_button.show()
         pygame.display.update()
         

@@ -15,6 +15,6 @@ def manhattan_with_barriers(start, goal, barriers) -> int:
     dx = abs(x2 - x1)
     dy = abs(y2 - y1)
     # Calcola il costo aggiuntivo per ogni barriera tra start e goal
-    barrier_cost = sum(4 for barrier in barriers if (barrier[0] > min(x1, x2) and barrier[0] < max(x1, x2) and
+    barrier_cost = sum(100 for barrier in barriers if (barrier[0] > min(x1, x2) and barrier[0] < max(x1, x2) and
                                                       barrier[1] > min(y1, y2) and barrier[1] < max(y1, y2)))
     return dx + dy + barrier_cost
