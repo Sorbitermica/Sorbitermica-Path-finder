@@ -11,7 +11,7 @@ class AstarNode(Node):
         return (self.g + self.h) < (other.g + other.h)
 
 class AStar(SearchAlgorithm):
-    def __init__(self, heuristic=lambda x, y: 0, view=True, w=1):
+    def __init__(self, heuristic=lambda x, y: 0, view=True, w=0.5):
         self.heuristic = heuristic
         self.w = w
         super().__init__(view)
@@ -21,7 +21,7 @@ class AStar(SearchAlgorithm):
         frontier = PriorityQueue()
         
         reached.add(problem.init)
-        h = self.heuristic(problem.init, problem.goal)
+        h = self.heuristic(problem.init, problem.goal,problem.barrier)
         frontier.put((h, AstarNode(problem.init, None, None, 0, h)))
         
         while not frontier.empty():
@@ -34,7 +34,7 @@ class AStar(SearchAlgorithm):
                     self.update_expanded(state)
                     reached.add(state)
                     g = node.g + 1
-                    h = self.heuristic(state, problem.goal)
+                    h = self.heuristic(state, problem.goal,problem.barrier)
                     f = g + h * self.w  # Calcolo della priorità f = g + h*w
                     frontier.put((f, AstarNode(state, node, action, g, h)))
         

@@ -3,18 +3,19 @@ class SearchProblem(object):
     """
     This is a base Search Problem. Implement this to get your specific implementation depending on your domain
     """
-    def __init__(self, init, goal, actions :set, world, cost :dict):
+    def __init__(self, init, goal, actions :set, world, cost :dict,barrier):
         self.init = init
         self.goal = goal
         self.actions = actions
         self.world = world
         self.cost = cost
+        self.barrier = barrier
 
 class PathFinding(SearchProblem):
-    def __init__(self, world, init, goal): 
+    def __init__(self, world, init, goal,barrier): 
         actions = ['N','S','W','E']
         cost = [(a,1) for a in actions]
-        super().__init__(init, goal, actions, world, cost)
+        super().__init__(init, goal, actions, world, cost,barrier)
         
 
     def getSuccessors(self, state): 

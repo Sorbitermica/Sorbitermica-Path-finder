@@ -6,7 +6,6 @@ import json
 import click 
 import time
 import tkinter as tk
-
 import json
 
 
@@ -85,12 +84,12 @@ def get_mandatory_points(mandatory_points, select_all=False):
 
     dialog.wait_window()
 
-def trova_punto_vicino(start_point,mandatory_points):
+def trova_punto_vicino(start_point,mandatory_points,walls):
     min_euristica = float('inf')
     prossimo_punto = None
                     
     for punto in mandatory_points:
-        euristica = heuristics.manhattan(start_point, punto)
+        euristica = heuristics.manhattan_with_barriers(start_point, punto,walls)
         if euristica < min_euristica:
             min_euristica = euristica
             prossimo_punto = punto
@@ -285,7 +284,7 @@ def mark_spots(start, end, grid, plan,win):
             # Aggiorna la visualizzazione della finestra
             draw(win, grid, len(grid), len(grid[0]))
             pygame.display.update()
-            pygame.time.wait(15)  # Attendi per un breve periodo
+            pygame.time.wait(10)  # Attendi per un breve periodo
             
     # Ensure end spot remains marked as end
     
@@ -393,7 +392,7 @@ def main(width, rows, search_algorithm, filename):
     get_mandatory_points(mandatory_points)
     
     search_algorithm == 'ASTAR'
-    search_algorithm = ASTARPathFinder(heuristics.manhattan,True)
+    search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
     if filename == 'tempmap.json':
         grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
@@ -473,8 +472,8 @@ def main(width, rows, search_algorithm, filename):
                 if mandatory_points.__len__() != 0:
                     
                     # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
-                    prossimo_punto = trova_punto_vicino(initial_point,mandatory_points)
-                    p = PathFinding(world,(initial_point),(prossimo_punto))
+                    prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
+                    p = PathFinding(world,(initial_point),(prossimo_punto),wall)
                     current_point= prossimo_punto  
                     plan = search_algorithm.solve(p)
                     if plan:
@@ -483,9 +482,9 @@ def main(width, rows, search_algorithm, filename):
                     # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
                         while mandatory_points:
                             # Trova il punto intermedio più vicino al punto corrente
-                            prossimo_punto = trova_punto_vicino(current_point, mandatory_points)
+                            prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
                             # Calcola il percorso tra il punto corrente e il punto intermedio
-                            p = PathFinding(world, current_point, prossimo_punto)
+                            p = PathFinding(world, current_point, prossimo_punto,wall)
                             plan = search_algorithm.solve(p)
                             if plan:
                                 all_plan.extend(plan)
@@ -494,12 +493,12 @@ def main(width, rows, search_algorithm, filename):
                                 # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
                                 mandatory_points.remove(prossimo_punto)
                     #Calcolo dell'euristica tra l'ultimo punto e il punto finale
-                    int_p = PathFinding(world,(current_point),(final_point))
+                    int_p = PathFinding(world,(current_point),(final_point),wall)
                     int_plan = (search_algorithm.solve(int_p))
                     if int_plan:
                         all_plan.extend(int_plan)
                 else : 
-                    final_p = PathFinding(world,(initial_point),(final_point))
+                    final_p = PathFinding(world,(initial_point),(final_point),wall)
                     final_plan = (search_algorithm.solve(final_p))
                     if final_plan:
                         all_plan.extend(final_plan)
