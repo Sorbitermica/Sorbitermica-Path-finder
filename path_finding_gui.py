@@ -7,11 +7,12 @@ import click
 import time
 import tkinter as tk
 import json
-import random
+import tkinter.ttk as ttk
+
 
 
 WIDTH1 = 1000
-WIDTH2 = 700
+WIDTH2 = 750
 WIDTH = 1000
 pygame.init()
 
@@ -315,8 +316,8 @@ class Button:
         self.surface.blit(self.text, (0, 0))
         self.rect = pygame.Rect(self.x, self.y, self.size[0], self.size[1])
  
-    #def show(self):
-       # WIN.blit(self.surface, (self.x, self.y))
+    def show(self,WIN):
+        WIN.blit(self.surface, (self.x, self.y))
  
     def click(self, event, grid, start, end):
         x, y = pygame.mouse.get_pos()
@@ -326,6 +327,15 @@ class Button:
                     if grid is not None and start is not None and end is not None:
                         save_to_file(grid, start, end, "tempmap.json")
                         self.change_text(self.feedback, bg="red")  
+
+
+    def click_start(self,event):
+        x, y = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                if self.rect.collidepoint(x, y):
+                    self.change_text(self.feedback, bg = "red")
+                    
 
 save_map_button = Button(
     "Save Map",
@@ -340,6 +350,13 @@ load_map_button = Button(
     font=20,
     bg="navy",
     feedback="Loaded")
+start_button = Button(
+    "Cerca percorso",
+
+    (10, 710),
+    font=20,
+    bg="navy",
+    feedback="Percorso trovato")
 
 clock = pygame.time.Clock()
 
@@ -359,7 +376,7 @@ def main(width, rows, search_algorithm, filename):
     points.update(mandatory_points)
     
     get_mandatory_points(mandatory_points)
-    win = pygame.display.set_mode((WIDTH1, WIDTH2))
+    WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
     pygame.display.set_caption("A* Sorbitermica")
     search_algorithm == 'ASTAR'
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
@@ -370,16 +387,12 @@ def main(width, rows, search_algorithm, filename):
         grid = make_grid(rows, width,mandatory_points)
         wall = set()
     run = True
-    
-    
-    
-    
     while run:
-        
-        draw(win, grid, rows, width)
+        draw(WIN, grid, rows, width)
 
-        #save_map_button.show()
-        #load_map_button.show()
+        save_map_button.show(WIN)
+        start_button.show(WIN)
+        
         pygame.display.update()
         
 
@@ -388,6 +401,7 @@ def main(width, rows, search_algorithm, filename):
             if event.type == pygame.QUIT:
                 run = False
             save_map_button.click(event, grid, start, end)
+            start_button.click_start(event)
 
             if pygame.mouse.get_pressed()[0]:  # LEFT
                 pos = pygame.mouse.get_pos()
@@ -402,9 +416,7 @@ def main(width, rows, search_algorithm, filename):
                         end = spot
                         end.make_end()
 
-                    elif spot != end and spot != start:
-                        spot.make_barrier()
-                        wall.add((row,col))
+                    
 
             if pygame.mouse.get_pressed()[2]: # RIGHT
                 pos = pygame.mouse.get_pos()
@@ -434,7 +446,7 @@ def main(width, rows, search_algorithm, filename):
                         mandatory_points.add((row,col))
             
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and start and end and not event.key == pygame.K_c:
+                if event.key == pygame.K_SPACE  and start and end and not event.key == pygame.K_c:
                     
                     now1 = time.time()   
                     world = PathFinding.World(rows-1,rows-1,wall)
@@ -486,9 +498,8 @@ def main(width, rows, search_algorithm, filename):
                 if all_plan is not None:
                     print(all_plan)
                     print("Cost of the plan is: {}".format(len(all_plan)))
-
-                    mark_spots(start, end, grid,all_plan,win)
-                    draw(win, grid, rows, width)
+                    mark_spots(start, end, grid,all_plan,WIN)
+                    draw(WIN, grid, rows, width)
                     pygame.display.update()  
                     
                 if event.key == pygame.K_c:
@@ -498,7 +509,7 @@ def main(width, rows, search_algorithm, filename):
                     mandatory_points = set()  # reimposta la lista dei punti obbligati a vuota
                     points=set()
                     all_plan = None
-                    grid = make_grid(rows, width)
+                    grid = make_grid_from_file(filename, width, mandatory_points)
                     wall = set()
                     pygame.display.update()
                     
