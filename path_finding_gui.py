@@ -169,7 +169,7 @@ def draw_grid(win, rows, width):
         for j in range(rows):
             pygame.draw.line(win, WHITE, (j * gap, 0), (j * gap, width))
 
-def draw(win, grid, rows, width):
+def draw(win, grid):
     win.fill(WHITE)
 
     for row in grid:
@@ -182,7 +182,7 @@ def draw(win, grid, rows, width):
 
     pygame.display.update()
 
-def make_grid(rows, width, mandatory_points=None):
+def make_grid(rows, width, mandatory_points):
     grid = []
     gap = width // rows
     for i in range(rows):
@@ -204,7 +204,7 @@ def get_clicked_pos(pos, rows, width):
 
     return row, col
 
-def make_grid_from_file(filename, width, mandatory_points=None):
+def make_grid_from_file(filename, width, mandatory_points):
     f = open(filename)
     data = json.load(f)
 
@@ -256,7 +256,7 @@ def mark_spots(start, end, grid, plan,win):
             current_spot.make_path()
             start = current_spot
             # Aggiorna la visualizzazione della finestra
-            draw(win, grid, len(grid), len(grid[0]))
+            draw(win, grid)
             pygame.display.update()
             pygame.time.wait(10)  # Attendi per un breve periodo
             
@@ -305,7 +305,7 @@ def main(width, rows, search_algorithm, filename):
 
     while run:
 
-        draw(WIN, grid, rows, width)
+        draw(WIN, grid)
 
         pygame.display.update()
         
@@ -416,7 +416,7 @@ def main(width, rows, search_algorithm, filename):
                         print(all_plan)
                         print("Cost of the plan is: {}".format(len(all_plan)))
                         mark_spots(start, end, grid,all_plan,WIN)
-                        draw(WIN, grid, rows, width)
+                        draw(WIN, grid)
                         pygame.display.update()  
                 
                     
