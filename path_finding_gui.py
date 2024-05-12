@@ -281,6 +281,56 @@ def mark_points(point, grid):
     for e in point:
         grid[e[0]][e[1]].make_points()
 
+def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
+
+    world = PathFinding.World(rows-1,rows-1,wall)
+    all_plan = []
+    # Inizializzazione del punto corrente come punto di partenza
+    initial_point = (start.row, start.col)
+    final_point = (end.row,end.col)
+
+    if mandatory_points.__len__() != 0:
+        # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
+        prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
+        p = PathFinding(world,(initial_point),(prossimo_punto),wall)
+        current_point= prossimo_punto  
+        plan = search_algorithm.solve(p)
+
+        if plan:
+            all_plan.extend(plan)
+            mandatory_points.remove(prossimo_punto) 
+        # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
+
+            while mandatory_points:
+                # Trova il punto intermedio più vicino al punto corrente
+                prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
+                # Calcola il percorso tra il punto corrente e il punto intermedio
+                p = PathFinding(world, current_point, prossimo_punto,wall)
+                plan = search_algorithm.solve(p)
+
+                if plan:
+                    all_plan.extend(plan)
+                    # Aggiorna il punto corrente al punto appena trovato
+                    current_point = prossimo_punto
+                    # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
+                    mandatory_points.remove(prossimo_punto)
+        #Calcolo dell'euristica tra l'ultimo punto e il punto finale
+        int_p = PathFinding(world,(current_point),(final_point),wall)
+        int_plan = (search_algorithm.solve(int_p))
+
+        if int_plan:
+            all_plan.extend(int_plan)
+
+    else : 
+        final_p = PathFinding(world,(initial_point),(final_point),wall)
+        final_plan = (search_algorithm.solve(final_p))
+
+        if final_plan:
+    
+            all_plan.extend(final_plan)
+            
+    return all_plan
+
 clock = pygame.time.Clock()
 
 @click.command()
@@ -368,50 +418,8 @@ def main(width, rows, search_algorithm, filename):
                 if event.key == pygame.K_SPACE  and start and end:
                     
                     now1 = time.time()   
-                    world = PathFinding.World(rows-1,rows-1,wall)
-                    all_plan = []
-                    # Inizializzazione del punto corrente come punto di partenza
-                    initial_point = (start.row, start.col)
-                    final_point = (end.row,end.col)
                     
-                    if mandatory_points.__len__() != 0:
-                        # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
-                        prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
-                        p = PathFinding(world,(initial_point),(prossimo_punto),wall)
-                        current_point= prossimo_punto  
-                        plan = search_algorithm.solve(p)
-
-                        if plan:
-                            all_plan.extend(plan)
-                            mandatory_points.remove(prossimo_punto) 
-                        # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
-
-                            while mandatory_points:
-                                # Trova il punto intermedio più vicino al punto corrente
-                                prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
-                                # Calcola il percorso tra il punto corrente e il punto intermedio
-                                p = PathFinding(world, current_point, prossimo_punto,wall)
-                                plan = search_algorithm.solve(p)
-
-                                if plan:
-                                    all_plan.extend(plan)
-                                    # Aggiorna il punto corrente al punto appena trovato
-                                    current_point = prossimo_punto
-                                    # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
-                                    mandatory_points.remove(prossimo_punto)
-                        #Calcolo dell'euristica tra l'ultimo punto e il punto finale
-                        int_p = PathFinding(world,(current_point),(final_point),wall)
-                        int_plan = (search_algorithm.solve(int_p))
-
-                        if int_plan:
-                            all_plan.extend(int_plan)
-
-                    else : 
-                        final_p = PathFinding(world,(initial_point),(final_point),wall)
-                        final_plan = (search_algorithm.solve(final_p))
-
-                        if final_plan:
-                            all_plan.extend(final_plan)
+                    all_plan = trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm)
 
                     now2 = time.time()
                     now= (now2 - now1)
