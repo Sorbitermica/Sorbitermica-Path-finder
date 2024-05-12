@@ -9,7 +9,7 @@ import tkinter as tk
 import json
 
 
-WIDTH1 = 1000
+WIDTH1 = 1200
 WIDTH2 = 700
 WIDTH = 1000
 pygame.init()
@@ -183,7 +183,8 @@ def draw(win, grid):
             
             spot.draw(win)
             
-
+    bottone_genera.show(win)
+    bottone_reset.show(win)
     #draw_grid(win, rows, width)
 
     pygame.display.update()
@@ -331,6 +332,77 @@ def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
             
     return all_plan
 
+class Button:
+    """Create a button, then blit the surface in the while loop"""
+ 
+    def __init__(self, text, pos, width, height, font_size=18, bg="navy", fg="white", border_color="black", border_width=2, feedback=""):
+        self.x, self.y = pos
+        self.width = width
+        self.height = height
+        self.font_size = font_size
+        self.bg = bg
+        self.fg = fg
+        self.border_color = border_color
+        self.border_width = border_width
+        
+        if feedback == "":
+            self.feedback = text
+        else:
+            self.feedback = feedback
+        
+        self.change_text(text)
+
+    def change_text(self, text):
+        self.font = pygame.font.SysFont("Arial", self.font_size)
+        self.text = self.font.render(text, True, pygame.Color(self.fg))
+        text_width, text_height = self.text.get_size()
+        self.surface = pygame.Surface((self.width, self.height))
+        self.surface.fill(pygame.Color(self.border_color))
+        self.surface.fill(pygame.Color(self.bg), pygame.Rect(self.border_width, self.border_width, self.width - self.border_width * 2, self.height - self.border_width * 2))
+        text_x = (self.width - text_width) // 2
+        text_y = (self.height - text_height) // 2
+        self.surface.blit(self.text, (text_x, text_y))
+        self.rect = self.surface.get_rect(topleft=(self.x, self.y))
+ 
+    def show(self,WIN):
+        WIN.blit(self.surface, (self.x, self.y))
+ 
+    def click(self, event, grid, start, end):
+        x, y = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                if self.rect.collidepoint(x, y):
+                    if grid is not None and start is not None and end is not None:
+                        
+                        return True
+        return False
+    
+bottone_genera = Button(
+    "Genera percorso",
+    (WIDTH+25, 50),
+    width=150,
+    height=30,
+    font_size=20,
+    bg=(0, 100, 0),
+    fg="white",
+    border_color="black",
+    border_width=3,
+    feedback="Generato"
+)
+
+bottone_reset = Button(
+    "Reset",
+    (WIDTH + 25, 120),
+    width=150,
+    height=30,
+    font_size=18,
+    bg="red",
+    fg="white",
+    border_color="black",
+    border_width=3,
+    feedback="Reset"
+)
+
 clock = pygame.time.Clock()
 
 @click.command()
@@ -351,7 +423,6 @@ def main(width, rows, search_algorithm, filename):
 
     get_mandatory_points(mandatory_points)
     
-
     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
 
     WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
@@ -360,32 +431,31 @@ def main(width, rows, search_algorithm, filename):
     run = True
 
     while run:
-
+        
         draw(WIN, grid)
 
         pygame.display.update()
         
         for event in pygame.event.get():
 
-            pygame.display.update()
-            
             if event.type == pygame.QUIT:
                 run = False
-            
-            if pygame.mouse.get_pressed()[0]:  # LEFT
-                pos = pygame.mouse.get_pos()
-                if pos[0] < width and pos[1] < width:
-                    row, col = get_clicked_pos(pos, rows, width)
-                    spot = grid[row][col]
-                    if not start and spot != end:
-                        start = spot
-                        start.make_start()
-                        
-                    elif not end and spot != start:
-                        end = spot
-                        end.make_end()
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:  # LEFT
+                    pos = pygame.mouse.get_pos()
+                    if pos[0] < width and pos[1] < width:
+                        row, col = get_clicked_pos(pos, rows, width)
+                        spot = grid[row][col]
+                        if not start and spot != end:
+                            start = spot
+                            start.make_start()
+                            
+                        elif not end and spot != start:
+                            end = spot
+                            end.make_end()
 
-            if pygame.mouse.get_pressed()[2]: # RIGHT
+            elif pygame.mouse.get_pressed()[2]: # RIGHT
                 pos = pygame.mouse.get_pos()
                 if pos[0] < width and pos[1] < width:
                     row, col = get_clicked_pos(pos, rows, width)
@@ -400,57 +470,50 @@ def main(width, rows, search_algorithm, filename):
                     elif spot == end:
                         end = None
 
-            if pygame.mouse.get_pressed()[1]:
+            elif pygame.mouse.get_pressed()[1]:
                 pos = pygame.mouse.get_pos()
                 if pos[0] < width and pos[1] < width:
                     row,col = get_clicked_pos(pos, rows, width)
                     spot=grid[row][col]
-                    
                     if pos in mandatory_points:
                         mandatory_points.remove((row,col))
                     else: 
                         spot.make_points()
                         mandatory_points.add((row,col))
-                    
+
             
-            if event.type == pygame.KEYDOWN:
-
-                if event.key == pygame.K_SPACE  and start and end:
-                    
-                    now1 = time.time()   
-                    
-                    all_plan = trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm)
-
-                    now2 = time.time()
-                    now= (now2 - now1)
-
-                    print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded,now))
-
-                    #mark_expanded(search_algorithm.expanded_states, grid)
-                    
-                    if all_plan is not None:
-                        print(all_plan)
-                        print("Cost of the plan is: {}".format(len(all_plan)))
-                        mark_spots(start, end, grid,all_plan,WIN)
-                        draw(WIN, grid)
-                        pygame.display.update()  
+            clicked_reset = bottone_reset.click(event, grid, start, end)
+            if clicked_reset:
+                pygame.display.quit()
                 
-                    
-                if event.key == pygame.K_c:
+                mandatory_points = set()
+                get_mandatory_points(mandatory_points)
 
-                    pygame.quit()
-                    
-                    mandatory_points = set()
-                    get_mandatory_points(mandatory_points)
+                WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
+                pygame.display.set_caption("A* Sorbitermica")
+                
+                pygame.display.update()
+                
+                grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
 
-                    WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
-                    pygame.display.set_caption("A* Sorbitermica")
-                    pygame.display.update()
+            clicked_genera = bottone_genera.click(event, grid, start, end)
+            if clicked_genera:
+                now1 = time.time()   
+                
+                all_plan = trova_percorso(rows, wall, start, end, mandatory_points, search_algorithm)
 
-                    grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
-                    
-                     
-                    
+                now2 = time.time()
+                now = (now2 - now1)
+
+                print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded, now))
+
+                if all_plan is not None:
+                    print(all_plan)
+                    print("Cost of the plan is: {}".format(len(all_plan)))
+                    mark_spots(start, end, grid, all_plan, WIN)
+                    draw(WIN, grid)
+                    pygame.display.update()  
+                
     pygame.quit()
 
 if __name__ == '__main__':
