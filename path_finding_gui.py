@@ -46,6 +46,7 @@ def get_mandatory_points(mandatory_points, select_all=False):
     dialog.title("Seleziona i punti intermedi")
     dialog.geometry("350x450")
 
+    
     selected_points = []
     checkboxes = {}  # Dizionario per memorizzare i checkbox
     
@@ -310,7 +311,9 @@ def main(width, rows, search_algorithm, filename):
         pygame.display.update()
         
         for event in pygame.event.get():
+
             pygame.display.update()
+            
             if event.type == pygame.QUIT:
                 run = False
             
@@ -357,7 +360,7 @@ def main(width, rows, search_algorithm, filename):
             
             if event.type == pygame.KEYDOWN:
 
-                if event.key == pygame.K_SPACE  and start and end and not event.key == pygame.K_c:
+                if event.key == pygame.K_SPACE  and start and end:
                     
                     now1 = time.time()   
                     world = PathFinding.World(rows-1,rows-1,wall)
@@ -423,16 +426,17 @@ def main(width, rows, search_algorithm, filename):
                 if event.key == pygame.K_c:
 
                     pygame.quit()
-
+                    
                     mandatory_points = set()
                     get_mandatory_points(mandatory_points)
 
                     WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
                     pygame.display.set_caption("A* Sorbitermica")
+                    pygame.display.update()
 
                     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
                     
-                    pygame.display.update()
+                     
                     
     pygame.quit()
 
