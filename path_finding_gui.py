@@ -7,8 +7,6 @@ import click
 import time
 import tkinter as tk
 import json
-import tkinter.ttk as ttk
-
 
 
 WIDTH1 = 1000
@@ -27,7 +25,6 @@ ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
 
-
 def get_mandatory_points(mandatory_points, select_all=False):
     prefixed_points = {
         "Chiave a tubo": ((16, 20)),
@@ -44,7 +41,7 @@ def get_mandatory_points(mandatory_points, select_all=False):
     
     root = tk.Tk()
     root.withdraw()
-
+    
     dialog = tk.Toplevel(root)
     dialog.title("Seleziona i punti intermedi")
     dialog.geometry("350x450")
@@ -67,16 +64,18 @@ def get_mandatory_points(mandatory_points, select_all=False):
         dialog.destroy()
 
     def select_all():
+        
         for name in prefixed_points.keys():
             var = checkboxes[name]
             var.set(1)
             if prefixed_points[name] not in selected_points:
                 selected_points.append(prefixed_points[name])
-
+    
     select_all_button = tk.Button(dialog, text="Seleziona Tutti", command=select_all)
     select_all_button.pack(pady=5)
 
     for name in prefixed_points.keys():
+        
         var = tk.IntVar()
         checkbox = tk.Checkbutton(dialog, text=name, variable=var, onvalue=1, offvalue=0,
                                    command=lambda n=name, v=var: toggle_point(n, v))
@@ -87,8 +86,9 @@ def get_mandatory_points(mandatory_points, select_all=False):
     done_button.pack(pady=5)
 
     dialog.wait_window()
-    return mandatory_points
 
+    return mandatory_points
+    
 def trova_punto_vicino(start_point,mandatory_points,walls):
     min_euristica = float('inf')
     prossimo_punto = None
@@ -264,8 +264,6 @@ def mark_spots(start, end, grid, plan,win):
     
     end.make_end()      
     
-
-
 def mark_expanded(exp, grid):
     for e in exp:
         current_spot = grid[e[0]][e[1]]
@@ -273,94 +271,9 @@ def mark_expanded(exp, grid):
                continue
         current_spot.make_closed()
 
-
-def save_to_file(grid, start, end, filename="temp.json"):
-    barrier = list()
-    for x in grid:
-        for spot in x:
-            if spot.is_barrier():
-                barrier.append((spot.row,spot.col))
-    res = {"rows":len(grid), "start": (start.row,start.col), "end": (end.row,end.col), "barrier":barrier}
-    data = json.dumps(res,indent=4)
-    with open(filename,"w") as data_file:
-        data_file.write(data)
-    
 def mark_points(point, grid):
     for e in point:
         grid[e[0]][e[1]].make_points()
-
-def save_to_file(grid, start, end, filename="temp.json"):
-    barrier = list()
-    for x in grid:
-        for spot in x:
-            if spot.is_barrier():
-                barrier.append((spot.row,spot.col))
-    res = {"rows":len(grid), "start": (start.row,start.col), "end": (end.row,end.col), "barrier":barrier}
-    data = json.dumps(res,indent=4)
-    with open(filename,"w") as data_file:
-        data_file.write(data)
-
-class Button:
-    """Create a button, then blit the surface in the while loop"""
- 
-    def __init__(self, text,  pos, font, bg="black", feedback=""):
-        self.x, self.y = pos
-        self.font = pygame.font.SysFont("Arial", font)
-        if feedback == "":
-            self.feedback = "text"
-        else:
-            self.feedback = feedback
-        self.change_text(text, bg)
- 
-    def change_text(self, text, bg="black"):
-        self.text = self.font.render(text, 1, pygame.Color("White"))
-        self.size = self.text.get_size()
-        self.surface = pygame.Surface(self.size)
-        self.surface.fill(bg)
-        self.surface.blit(self.text, (0, 0))
-        self.rect = pygame.Rect(self.x, self.y, self.size[0], self.size[1])
- 
-    def show(self,WIN):
-        WIN.blit(self.surface, (self.x, self.y))
- 
-    def click(self, event, grid, start, end):
-        x, y = pygame.mouse.get_pos()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if self.rect.collidepoint(x, y):
-                    if grid is not None and start is not None and end is not None:
-                        save_to_file(grid, start, end, "tempmap.json")
-                        self.change_text(self.feedback, bg="red")  
-
-
-    def click_start(self,event):
-        x, y = pygame.mouse.get_pos()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if self.rect.collidepoint(x, y):
-                    self.change_text(self.feedback, bg = "red")
-                    
-
-save_map_button = Button(
-    "Save Map",
-    (WIDTH+100, 100),
-    font=20,
-    bg="navy",
-    feedback="Saved")
-
-load_map_button = Button(
-    "Load Map",
-    (WIDTH+100, 200),
-    font=20,
-    bg="navy",
-    feedback="Loaded")
-start_button = Button(
-    "Cerca percorso",
-
-    (10, 710),
-    font=20,
-    bg="navy",
-    feedback="Percorso trovato")
 
 clock = pygame.time.Clock()
 
@@ -381,6 +294,7 @@ def main(width, rows, search_algorithm, filename):
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
     get_mandatory_points(mandatory_points)
+    
 
     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
 
@@ -393,15 +307,12 @@ def main(width, rows, search_algorithm, filename):
 
         draw(WIN, grid, rows, width)
 
-        save_map_button.show(WIN)
-        
         pygame.display.update()
         
         for event in pygame.event.get():
             pygame.display.update()
             if event.type == pygame.QUIT:
                 run = False
-            save_map_button.click(event, grid, start, end)
             
             if pygame.mouse.get_pressed()[0]:  # LEFT
                 pos = pygame.mouse.get_pos()
@@ -442,6 +353,7 @@ def main(width, rows, search_algorithm, filename):
                     else: 
                         spot.make_points()
                         mandatory_points.add((row,col))
+                    
             
             if event.type == pygame.KEYDOWN:
 
@@ -506,17 +418,21 @@ def main(width, rows, search_algorithm, filename):
                         mark_spots(start, end, grid,all_plan,WIN)
                         draw(WIN, grid, rows, width)
                         pygame.display.update()  
+                
                     
                 if event.key == pygame.K_c:
 
-                    mandatory_points = set()
+                    pygame.quit()
 
+                    mandatory_points = set()
                     get_mandatory_points(mandatory_points)
+
+                    WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
+                    pygame.display.set_caption("A* Sorbitermica")
 
                     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
                     
                     pygame.display.update()
-                    
                     
     pygame.quit()
 
