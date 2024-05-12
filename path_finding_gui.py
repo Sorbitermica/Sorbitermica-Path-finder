@@ -12,7 +12,7 @@ import tkinter.ttk as ttk
 
 
 WIDTH1 = 1000
-WIDTH2 = 750
+WIDTH2 = 700
 WIDTH = 1000
 pygame.init()
 
@@ -26,7 +26,7 @@ PURPLE = (128, 0, 128)
 ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
-colore = (0, 0, 0)
+
 
 def get_mandatory_points(mandatory_points, select_all=False):
     prefixed_points = {
@@ -41,7 +41,7 @@ def get_mandatory_points(mandatory_points, select_all=False):
         "Pinze": ((80,66)),
         "Rubinetto a sfera": ((15,3))
     }
-
+    
     root = tk.Tk()
     root.withdraw()
 
@@ -51,14 +51,17 @@ def get_mandatory_points(mandatory_points, select_all=False):
 
     selected_points = []
     checkboxes = {}  # Dizionario per memorizzare i checkbox
-
+    
     def toggle_point(name, var):
         if var.get() == 1:
-            selected_points.append(prefixed_points[name])
+            if prefixed_points[name] not in selected_points:
+                selected_points.append(prefixed_points[name])
         elif var.get() == 0:
-            selected_points.remove(prefixed_points[name])
+            if prefixed_points[name] in selected_points:
+                selected_points.remove(prefixed_points[name])
 
     def add_selected_points():
+        
         mandatory_points.update(selected_points)
         print("Punti intermedi aggiunti:", mandatory_points)
         dialog.destroy()
@@ -84,6 +87,7 @@ def get_mandatory_points(mandatory_points, select_all=False):
     done_button.pack(pady=5)
 
     dialog.wait_window()
+    return mandatory_points
 
 def trova_punto_vicino(start_point,mandatory_points,walls):
     min_euristica = float('inf')
@@ -372,37 +376,33 @@ def main(width, rows, search_algorithm, filename):
     end = None
     ROWS = rows
     mandatory_points = set()
-    points= set()
-    points.update(mandatory_points)
-    
-    get_mandatory_points(mandatory_points)
-    WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
-    pygame.display.set_caption("A* Sorbitermica")
+
     search_algorithm == 'ASTAR'
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
-    if filename == 'tempmap.json':
-        grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
-    else:
-        grid = make_grid(rows, width,mandatory_points)
-        wall = set()
+    get_mandatory_points(mandatory_points)
+
+    grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
+
+    WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
+    pygame.display.set_caption("A* Sorbitermica")
+        
     run = True
+
     while run:
+
         draw(WIN, grid, rows, width)
 
         save_map_button.show(WIN)
-        start_button.show(WIN)
         
         pygame.display.update()
         
-
         for event in pygame.event.get():
             pygame.display.update()
             if event.type == pygame.QUIT:
                 run = False
             save_map_button.click(event, grid, start, end)
-            start_button.click_start(event)
-
+            
             if pygame.mouse.get_pressed()[0]:  # LEFT
                 pos = pygame.mouse.get_pos()
                 if pos[0] < width and pos[1] < width:
@@ -415,8 +415,6 @@ def main(width, rows, search_algorithm, filename):
                     elif not end and spot != start:
                         end = spot
                         end.make_end()
-
-                    
 
             if pygame.mouse.get_pressed()[2]: # RIGHT
                 pos = pygame.mouse.get_pos()
@@ -446,6 +444,7 @@ def main(width, rows, search_algorithm, filename):
                         mandatory_points.add((row,col))
             
             if event.type == pygame.KEYDOWN:
+
                 if event.key == pygame.K_SPACE  and start and end and not event.key == pygame.K_c:
                     
                     now1 = time.time()   
@@ -454,63 +453,68 @@ def main(width, rows, search_algorithm, filename):
                     # Inizializzazione del punto corrente come punto di partenza
                     initial_point = (start.row, start.col)
                     final_point = (end.row,end.col)
-                if mandatory_points.__len__() != 0:
                     
-                    # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
-                    prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
-                    p = PathFinding(world,(initial_point),(prossimo_punto),wall)
-                    current_point= prossimo_punto  
-                    plan = search_algorithm.solve(p)
-                    if plan:
-                        all_plan.extend(plan)
-                        mandatory_points.remove(prossimo_punto) 
-                    # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
-                        while mandatory_points:
-                            # Trova il punto intermedio più vicino al punto corrente
-                            prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
-                            # Calcola il percorso tra il punto corrente e il punto intermedio
-                            p = PathFinding(world, current_point, prossimo_punto,wall)
-                            plan = search_algorithm.solve(p)
-                            if plan:
-                                all_plan.extend(plan)
-                                # Aggiorna il punto corrente al punto appena trovato
-                                current_point = prossimo_punto
-                                # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
-                                mandatory_points.remove(prossimo_punto)
-                    #Calcolo dell'euristica tra l'ultimo punto e il punto finale
-                    int_p = PathFinding(world,(current_point),(final_point),wall)
-                    int_plan = (search_algorithm.solve(int_p))
-                    if int_plan:
-                        all_plan.extend(int_plan)
-                else : 
-                    final_p = PathFinding(world,(initial_point),(final_point),wall)
-                    final_plan = (search_algorithm.solve(final_p))
-                    if final_plan:
-                        all_plan.extend(final_plan)
+                    if mandatory_points.__len__() != 0:
+                        # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
+                        prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
+                        p = PathFinding(world,(initial_point),(prossimo_punto),wall)
+                        current_point= prossimo_punto  
+                        plan = search_algorithm.solve(p)
 
-                now2 = time.time()
-                now= (now2 - now1)
+                        if plan:
+                            all_plan.extend(plan)
+                            mandatory_points.remove(prossimo_punto) 
+                        # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
 
-                print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded,now))
+                            while mandatory_points:
+                                # Trova il punto intermedio più vicino al punto corrente
+                                prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
+                                # Calcola il percorso tra il punto corrente e il punto intermedio
+                                p = PathFinding(world, current_point, prossimo_punto,wall)
+                                plan = search_algorithm.solve(p)
 
-                #mark_expanded(search_algorithm.expanded_states, grid)
-                
-                if all_plan is not None:
-                    print(all_plan)
-                    print("Cost of the plan is: {}".format(len(all_plan)))
-                    mark_spots(start, end, grid,all_plan,WIN)
-                    draw(WIN, grid, rows, width)
-                    pygame.display.update()  
+                                if plan:
+                                    all_plan.extend(plan)
+                                    # Aggiorna il punto corrente al punto appena trovato
+                                    current_point = prossimo_punto
+                                    # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
+                                    mandatory_points.remove(prossimo_punto)
+                        #Calcolo dell'euristica tra l'ultimo punto e il punto finale
+                        int_p = PathFinding(world,(current_point),(final_point),wall)
+                        int_plan = (search_algorithm.solve(int_p))
+
+                        if int_plan:
+                            all_plan.extend(int_plan)
+
+                    else : 
+                        final_p = PathFinding(world,(initial_point),(final_point),wall)
+                        final_plan = (search_algorithm.solve(final_p))
+
+                        if final_plan:
+                            all_plan.extend(final_plan)
+
+                    now2 = time.time()
+                    now= (now2 - now1)
+
+                    print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded,now))
+
+                    #mark_expanded(search_algorithm.expanded_states, grid)
+                    
+                    if all_plan is not None:
+                        print(all_plan)
+                        print("Cost of the plan is: {}".format(len(all_plan)))
+                        mark_spots(start, end, grid,all_plan,WIN)
+                        draw(WIN, grid, rows, width)
+                        pygame.display.update()  
                     
                 if event.key == pygame.K_c:
+
+                    mandatory_points = set()
+
+                    get_mandatory_points(mandatory_points)
+
+                    grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
                     
-                    start = None
-                    end = None
-                    mandatory_points = set()  # reimposta la lista dei punti obbligati a vuota
-                    points=set()
-                    all_plan = None
-                    grid = make_grid_from_file(filename, width, mandatory_points)
-                    wall = set()
                     pygame.display.update()
                     
                     
