@@ -25,7 +25,7 @@ ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
 
-def get_mandatory_points(mandatory_points, select_all=False):
+def get_mandatory_points(mandatory_points):
     prefixed_points = {
         "Chiave a tubo": ((16, 20)),
         "Pompa ad aria compressa": ((60, 24)),
@@ -53,26 +53,31 @@ def get_mandatory_points(mandatory_points, select_all=False):
     def toggle_point(name, var):
         if var.get() == 1:
             if prefixed_points[name] not in selected_points:
+                
                 selected_points.append(prefixed_points[name])
         elif var.get() == 0:
             if prefixed_points[name] in selected_points:
+                
                 selected_points.remove(prefixed_points[name])
 
     def add_selected_points():
-        
         mandatory_points.update(selected_points)
         print("Punti intermedi aggiunti:", mandatory_points)
-        dialog.destroy()
+        root.destroy()
 
-    def select_all():
-        
+    def select_all_points():
         for name in prefixed_points.keys():
             var = checkboxes[name]
             var.set(1)
             if prefixed_points[name] not in selected_points:
                 selected_points.append(prefixed_points[name])
+    def on_close():
+        mandatory_points.clear()  # Pulisci i punti intermedi selezionati
+        root.destroy()  # Chiudi la finestra di dialogo
+
+    dialog.protocol("WM_DELETE_WINDOW", on_close)
     
-    select_all_button = tk.Button(dialog, text="Seleziona Tutti", command=select_all)
+    select_all_button = tk.Button(dialog, text="Seleziona Tutti", command=select_all_points)
     select_all_button.pack(pady=5)
 
     for name in prefixed_points.keys():
