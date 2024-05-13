@@ -7,7 +7,7 @@ import click
 import time
 import tkinter as tk
 import json
-import threading
+
 
 
 WIDTH1 = 1200
@@ -65,8 +65,14 @@ def get_mandatory_points(mandatory_points):
         mandatory_points.update(selected_points)
         nonlocal selected_map  # Usa la variabile della funzione esterna
         selected_maps = [map_name for map_name, var in checkboxes_map.items() if var.get() == 1]
-        if selected_maps:
-            selected_map = selected_maps[0]  # Seleziona solo il primo nome della mappa
+        try:
+            if selected_maps:
+                selected_map = selected_maps[0]  # Seleziona solo il primo nome della mappa
+            else:
+                raise ValueError("nessuna mappa selezionata")
+        except ValueError as va:
+            print(va)
+        
         print("Nome della mappa selezionata:", selected_map)
         print("Punti intermedi aggiunti:", mandatory_points)
         root.destroy()
@@ -208,7 +214,7 @@ def draw(win, grid):
             
     bottone_genera.show(win)
     bottone_reset.show(win)
-    #draw_grid(win, rows, width)
+    bottone_save.show(win)
 
     pygame.display.update()
 
@@ -355,6 +361,16 @@ def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
             
     return all_plan
 
+def save_to_file(grid, start, end,map_name):
+    barrier = list()
+    for x in grid:
+        for spot in x:
+            if spot.is_barrier():
+                barrier.append((spot.row,spot.col))
+    res = {"rows":len(grid), "start": (start.row,start.col), "end": (end.row,end.col), "barrier":barrier}
+    data = json.dumps(res,indent=4)
+    with open(map_name, "w") as data_file:
+        data_file.write(data)
 class Button:
     """Create a button, then blit the surface in the while loop"""
  
@@ -399,6 +415,16 @@ class Button:
                         return True
         return False
     
+    def click_save(self, event, grid, start, end,filename):
+        x, y = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0]:
+                if self.rect.collidepoint(x, y):
+                    if grid is not None and start is not None and end is not None:
+                        save_to_file(grid, start, end, filename)
+                        print("mappa salvata")
+                        
+    
 bottone_genera = Button(
     "Genera percorso",
     (WIDTH+25, 50),
@@ -425,6 +451,20 @@ bottone_reset = Button(
     feedback="Reset"
 )
 
+bottone_save = Button(
+    "Save",
+    (WIDTH + 25, 190),
+    width=150,
+    height=30,
+    font_size=18,
+    bg="blue",
+    fg="white",
+    border_color="black",
+    border_width=3,
+    feedback="Reset" 
+)
+
+
 clock = pygame.time.Clock()
 
 @click.command()
@@ -444,7 +484,7 @@ def main(width, rows, search_algorithm, filename):
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
     mandatory_points,filename = get_mandatory_points(mandatory_points)
-    
+
     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
 
     WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
@@ -462,7 +502,8 @@ def main(width, rows, search_algorithm, filename):
 
             if event.type == pygame.QUIT:
                 run = False
-                
+            
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if pygame.mouse.get_pressed()[0]:  # LEFT
                     pos = pygame.mouse.get_pos()
@@ -472,10 +513,12 @@ def main(width, rows, search_algorithm, filename):
                         if not start and spot != end:
                             start = spot
                             start.make_start()
-                            
                         elif not end and spot != start:
                             end = spot
                             end.make_end()
+                        elif spot != end and spot != start:
+                            spot.make_barrier()
+                            wall.add((row,col))
 
             elif pygame.mouse.get_pressed()[2]: # RIGHT
                 pos = pygame.mouse.get_pos()
@@ -503,13 +546,14 @@ def main(width, rows, search_algorithm, filename):
                         spot.make_points()
                         mandatory_points.add((row,col))
 
-            
+            bottone_save.click_save(event,grid,start,end,filename)
+
             clicked_reset = bottone_reset.click(event, grid, start, end)
             if clicked_reset:
                 pygame.display.quit()
-                
+                filename = None
                 mandatory_points = set()
-                get_mandatory_points(mandatory_points)
+                mandatory_points,filename =get_mandatory_points(mandatory_points)
 
                 WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
                 pygame.display.set_caption("A* Sorbitermica")
