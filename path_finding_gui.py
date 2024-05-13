@@ -7,6 +7,7 @@ import click
 import time
 import tkinter as tk
 import json
+import threading
 
 
 WIDTH1 = 1200
@@ -39,29 +40,34 @@ def get_mandatory_points(mandatory_points):
         "Rubinetto a sfera": ((15,3))
     }
     
+    grid_maps = ["mappa_1.json", "mappa_2.json", "mappa_3.json"]
+    
     root = tk.Tk()
     root.withdraw()
     
     dialog = tk.Toplevel(root)
-    dialog.title("Seleziona i punti intermedi")
-    dialog.geometry("350x450")
+    dialog.title("Selezione punti e mappa")
+    dialog.geometry("425x400")
 
-    
-    selected_points = []
     checkboxes = {}  # Dizionario per memorizzare i checkbox
+    selected_points = []
+    selected_map = None  # Variabile per memorizzare il nome della mappa selezionata
     
     def toggle_point(name, var):
         if var.get() == 1:
             if prefixed_points[name] not in selected_points:
-                
                 selected_points.append(prefixed_points[name])
         elif var.get() == 0:
             if prefixed_points[name] in selected_points:
-                
                 selected_points.remove(prefixed_points[name])
 
     def add_selected_points():
         mandatory_points.update(selected_points)
+        nonlocal selected_map  # Usa la variabile della funzione esterna
+        selected_maps = [map_name for map_name, var in checkboxes_map.items() if var.get() == 1]
+        if selected_maps:
+            selected_map = selected_maps[0]  # Seleziona solo il primo nome della mappa
+        print("Nome della mappa selezionata:", selected_map)
         print("Punti intermedi aggiunti:", mandatory_points)
         root.destroy()
 
@@ -71,30 +77,47 @@ def get_mandatory_points(mandatory_points):
             var.set(1)
             if prefixed_points[name] not in selected_points:
                 selected_points.append(prefixed_points[name])
+
     def on_close():
         mandatory_points.clear()  # Pulisci i punti intermedi selezionati
         root.destroy()  # Chiudi la finestra di dialogo
 
     dialog.protocol("WM_DELETE_WINDOW", on_close)
     
-    select_all_button = tk.Button(dialog, text="Seleziona Tutti", command=select_all_points)
-    select_all_button.pack(pady=5)
+    # Frame principale
+    main_frame = tk.Frame(dialog)
+    main_frame.pack(pady=5, padx=5, fill=tk.Y, side=tk.LEFT)
 
-    for name in prefixed_points.keys():
-        
+    # Aggiungi i checkbox per i punti intermedi
+    for i, name in enumerate(prefixed_points.keys()):
         var = tk.IntVar()
-        checkbox = tk.Checkbutton(dialog, text=name, variable=var, onvalue=1, offvalue=0,
+        checkbox = tk.Checkbutton(main_frame, text=name, variable=var, onvalue=1, offvalue=0,
                                    command=lambda n=name, v=var: toggle_point(n, v))
-        checkbox.pack(pady=5)
+        checkbox.grid(row=i, column=0, sticky=tk.W)
         checkboxes[name] = var  # Aggiungi il checkbox al dizionario
+    
+    select_all_button = tk.Button(main_frame, text="Seleziona Tutti", command=select_all_points)
+    select_all_button.grid(row=len(prefixed_points), column=1, pady=5)
 
-    done_button = tk.Button(dialog, text="Aggiungi", command=add_selected_points)
-    done_button.pack(pady=5)
+    done_button = tk.Button(main_frame, text="Aggiungi", command=add_selected_points)
+    done_button.grid(row=len(prefixed_points) + 1, column=1, pady=5)
+
+    # Frame per i checkbox delle mappe della griglia
+    map_frame = tk.Frame(dialog)
+    map_frame.pack(pady=10, padx=10, fill=tk.Y, side=tk.RIGHT)
+
+    # Aggiungi i checkbox per le mappe della griglia
+    checkboxes_map = {}
+    for i, map_name in enumerate(grid_maps):
+        var_map = tk.IntVar()
+        checkbox_map = tk.Checkbutton(map_frame, text=map_name, variable=var_map, onvalue=1, offvalue=0)
+        checkbox_map.grid(row=i, column=0, sticky=tk.W, padx=5, pady=2)  # Aggiungi spazio orizzontale e verticale
+        checkboxes_map[map_name] = var_map  # Aggiungi il checkbox al dizionario
 
     dialog.wait_window()
 
-    return mandatory_points
-    
+    return mandatory_points, selected_map  # Restituisci anche il nome della mappa selezionata
+
 def trova_punto_vicino(start_point,mandatory_points,walls):
     min_euristica = float('inf')
     prossimo_punto = None
@@ -373,7 +396,6 @@ class Button:
             if pygame.mouse.get_pressed()[0]:
                 if self.rect.collidepoint(x, y):
                     if grid is not None and start is not None and end is not None:
-                        
                         return True
         return False
     
@@ -409,7 +431,7 @@ clock = pygame.time.Clock()
 @click.option('-w', '--width', default = WIDTH, help = "Width of the Windows")
 @click.option('-r', '--rows', default = 100, help = "Number of rows/columns in the map")
 @click.option('-s', '--search_algorithm', default = "ASTAR", help = "Search algorithm to be used")
-@click.option('-f', '--filename', default = 'tempmap.json', help = "Initialize map with data from file")
+@click.option('-f', '--filename', default = None, help = "Initialize map with data from file")
 
 def main(width, rows, search_algorithm, filename):
     
@@ -421,7 +443,7 @@ def main(width, rows, search_algorithm, filename):
     search_algorithm == 'ASTAR'
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
-    get_mandatory_points(mandatory_points)
+    mandatory_points,filename = get_mandatory_points(mandatory_points)
     
     grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
 
@@ -503,6 +525,7 @@ def main(width, rows, search_algorithm, filename):
                 all_plan = trova_percorso(rows, wall, start, end, mandatory_points, search_algorithm)
 
                 now2 = time.time()
+                
                 now = (now2 - now1)
 
                 print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded, now))
