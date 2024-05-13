@@ -6,11 +6,11 @@ import json
 import click 
 import time
 import tkinter as tk
-import json
+import threading
 
 
 WIDTH1 = 1200
-WIDTH2 = 700
+WIDTH2 = 725
 WIDTH = 1000
 pygame.init()
 
@@ -175,17 +175,18 @@ def draw_grid(win, rows, width):
         for j in range(rows):
             pygame.draw.line(win, WHITE, (j * gap, 0), (j * gap, width))
 
-def draw(win, grid):
+def draw(win, grid, progress):
     win.fill(WHITE)
 
     for row in grid:
         for spot in row:
-            
             spot.draw(win)
             
     bottone_genera.show(win)
     bottone_reset.show(win)
-    #draw_grid(win, rows, width)
+
+    # Disegna la barra di caricamento
+    draw_loading_bar(win, progress)
 
     pygame.display.update()
 
@@ -241,7 +242,7 @@ def make_grid_from_file(filename, width, mandatory_points):
 
     return grid, start, end, rows, barrier, mandatory_points
 
-def mark_spots(start, end, grid, plan,win):
+def mark_spots(start, end, grid, plan,win,progress):
     
     x = start.row
     y = start.col
@@ -263,7 +264,7 @@ def mark_spots(start, end, grid, plan,win):
             current_spot.make_path()
             start = current_spot
             # Aggiorna la visualizzazione della finestra
-            draw(win, grid)
+            draw(win, grid,progress)
             pygame.display.update()
             pygame.time.wait(10)  # Attendi per un breve periodo
             
@@ -331,6 +332,24 @@ def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
             all_plan.extend(final_plan)
             
     return all_plan
+
+def draw_loading_bar(win, progress):
+    bar_width = 999
+    bar_height = 20
+    bar_x = 1
+    bar_y = 702
+
+    # Disegna lo sfondo della barra di caricamento
+    pygame.draw.rect(win, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height))
+
+    # Calcola la lunghezza della barra di caricamento in base al progresso
+    progress_length = int(bar_width * progress)
+    progress_length = min(progress_length, bar_width)
+    # Disegna la barra di caricamento
+    pygame.draw.rect(win, (0, 255, 0), (bar_x, bar_y, progress_length, bar_height))
+
+    # Aggiorna la finestra
+    pygame.display.update()
 
 class Button:
     """Create a button, then blit the surface in the while loop"""
@@ -416,6 +435,9 @@ def main(width, rows, search_algorithm, filename):
     start = None
     end = None
     ROWS = rows
+    
+    progress = 0
+    
     mandatory_points = set()
 
     search_algorithm == 'ASTAR'
@@ -429,19 +451,18 @@ def main(width, rows, search_algorithm, filename):
     pygame.display.set_caption("A* Sorbitermica")
         
     run = True
-
+    
     while run:
         
-        draw(WIN, grid)
+        draw(WIN, grid,progress)
 
-        pygame.display.update()
-        
         for event in pygame.event.get():
-
+            pygame.display.update()
             if event.type == pygame.QUIT:
                 run = False
                 
             if event.type == pygame.MOUSEBUTTONDOWN:
+                
                 if pygame.mouse.get_pressed()[0]:  # LEFT
                     pos = pygame.mouse.get_pos()
                     if pos[0] < width and pos[1] < width:
@@ -455,31 +476,31 @@ def main(width, rows, search_algorithm, filename):
                             end = spot
                             end.make_end()
 
-            elif pygame.mouse.get_pressed()[2]: # RIGHT
-                pos = pygame.mouse.get_pos()
-                if pos[0] < width and pos[1] < width:
-                    row, col = get_clicked_pos(pos, rows, width)
-                    spot = grid[row][col]
-                    spot.reset()
-                    try:
-                        wall.remove((row,col))
-                    except KeyError:
-                        print("La posizione ({},{}) non esiste in wall.".format(row, col))
-                    if spot == start:
-                        start = None
-                    elif spot == end:
-                        end = None
+                elif pygame.mouse.get_pressed()[2]: # RIGHT
+                    pos = pygame.mouse.get_pos()
+                    if pos[0] < width and pos[1] < width:
+                        row, col = get_clicked_pos(pos, rows, width)
+                        spot = grid[row][col]
+                        spot.reset()
+                        try:
+                            wall.remove((row,col))
+                        except KeyError:
+                            print("La posizione ({},{}) non esiste in wall.".format(row, col))
+                        if spot == start:
+                            start = None
+                        elif spot == end:
+                            end = None
 
-            elif pygame.mouse.get_pressed()[1]:
-                pos = pygame.mouse.get_pos()
-                if pos[0] < width and pos[1] < width:
-                    row,col = get_clicked_pos(pos, rows, width)
-                    spot=grid[row][col]
-                    if pos in mandatory_points:
-                        mandatory_points.remove((row,col))
-                    else: 
-                        spot.make_points()
-                        mandatory_points.add((row,col))
+                elif pygame.mouse.get_pressed()[1]:
+                    pos = pygame.mouse.get_pos()
+                    if pos[0] < width and pos[1] < width:
+                        row,col = get_clicked_pos(pos, rows, width)
+                        spot=grid[row][col]
+                        if pos in mandatory_points:
+                            mandatory_points.remove((row,col))
+                        else: 
+                            spot.make_points()
+                            mandatory_points.add((row,col))
 
             
             clicked_reset = bottone_reset.click(event, grid, start, end)
@@ -498,6 +519,7 @@ def main(width, rows, search_algorithm, filename):
 
             clicked_genera = bottone_genera.click(event, grid, start, end)
             if clicked_genera:
+
                 now1 = time.time()   
                 
                 all_plan = trova_percorso(rows, wall, start, end, mandatory_points, search_algorithm)
@@ -505,13 +527,15 @@ def main(width, rows, search_algorithm, filename):
                 now2 = time.time()
                 now = (now2 - now1)
 
-                print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded, now))
+                draw_loading_bar(WIN, now)
+                
 
                 if all_plan is not None:
+                    print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded, now))
                     print(all_plan)
                     print("Cost of the plan is: {}".format(len(all_plan)))
-                    mark_spots(start, end, grid, all_plan, WIN)
-                    draw(WIN, grid)
+                    mark_spots(start, end, grid, all_plan, WIN,now)
+                    draw(WIN, grid,now)
                     pygame.display.update()  
                 
     pygame.quit()
