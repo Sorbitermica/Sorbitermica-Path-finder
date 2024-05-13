@@ -8,8 +8,6 @@ import time
 import tkinter as tk
 import json
 
-
-
 WIDTH1 = 1200
 WIDTH2 = 700
 WIDTH = 1000
@@ -501,10 +499,11 @@ def main(width, rows, search_algorithm, filename):
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
+
                 run = False
             
-
             if event.type == pygame.MOUSEBUTTONDOWN:
+                
                 if pygame.mouse.get_pressed()[0]:  # LEFT
                     pos = pygame.mouse.get_pos()
                     if pos[0] < width and pos[1] < width:
