@@ -239,6 +239,10 @@ def get_clicked_pos(pos, rows, width):
     return row, col
 
 def make_grid_from_file(filename, width, mandatory_points):
+
+    if filename is None:
+        raise ValueError("Il nome del file non può essere None")
+
     f = open(filename)
     data = json.load(f)
 
@@ -292,7 +296,7 @@ def mark_spots(start, end, grid, plan,win):
             # Aggiorna la visualizzazione della finestra
             draw(win, grid)
             pygame.display.update()
-            pygame.time.wait(10)  # Attendi per un breve periodo
+            pygame.time.wait(5)  # Attendi per un breve periodo
             
     # Ensure end spot remains marked as end
     
@@ -503,7 +507,7 @@ def main(width, rows, search_algorithm, filename):
                 run = False
             
             if event.type == pygame.MOUSEBUTTONDOWN:
-                
+
                 if pygame.mouse.get_pressed()[0]:  # LEFT
                     pos = pygame.mouse.get_pos()
                     if pos[0] < width and pos[1] < width:
