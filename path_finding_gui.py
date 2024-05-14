@@ -1,3 +1,4 @@
+# Import delle librerie necessarie
 import pygame 
 from path_finding import PathFinding
 from ASTAR import AStar as ASTARPathFinder
@@ -8,6 +9,7 @@ import time
 import tkinter as tk
 import json
 
+# Definizione delle costanti dei colori e delle dimensioni della finestra
 WIDTH1 = 1200
 WIDTH2 = 700
 WIDTH = 1000
@@ -24,7 +26,8 @@ ORANGE = (255, 165, 0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
 
-def get_mandatory_points(mandatory_points):
+# Funzione per ottenere i punti intermedi tramite una finestra di dialogo
+def get_punti_intermedi(punti_intermedi):
     prefixed_points = {
         "Chiave a tubo": ((16, 20)),
         "Pompa ad aria compressa": ((60, 24)),
@@ -47,9 +50,9 @@ def get_mandatory_points(mandatory_points):
     dialog.title("Selezione punti e mappa")
     dialog.geometry("425x400")
 
-    checkboxes = {}  # Dizionario per memorizzare i checkbox
+    checkboxes = {}  
     selected_points = []
-    selected_map = None  # Variabile per memorizzare il nome della mappa selezionata
+    selected_map = None  
     
     def toggle_point(name, var):
         if var.get() == 1:
@@ -60,19 +63,19 @@ def get_mandatory_points(mandatory_points):
                 selected_points.remove(prefixed_points[name])
 
     def add_selected_points():
-        mandatory_points.update(selected_points)
-        nonlocal selected_map  # Usa la variabile della funzione esterna
+        punti_intermedi.update(selected_points)
+        nonlocal selected_map  
         selected_maps = [map_name for map_name, var in checkboxes_map.items() if var.get() == 1]
         try:
             if selected_maps:
-                selected_map = selected_maps[0]  # Seleziona solo il primo nome della mappa
+                selected_map = selected_maps[0]  
             else:
                 raise ValueError("nessuna mappa selezionata")
         except ValueError as va:
             print(va)
         
         print("Nome della mappa selezionata:", selected_map)
-        print("Punti intermedi aggiunti:", mandatory_points)
+        print("Punti intermedi aggiunti:", punti_intermedi)
         root.destroy()
 
     def select_all_points():
@@ -83,22 +86,22 @@ def get_mandatory_points(mandatory_points):
                 selected_points.append(prefixed_points[name])
 
     def on_close():
-        mandatory_points.clear()  # Pulisci i punti intermedi selezionati
-        root.destroy()  # Chiudi la finestra di dialogo
+        punti_intermedi.clear() 
+        root.destroy()  
 
     dialog.protocol("WM_DELETE_WINDOW", on_close)
     
-    # Frame principale
+    
     main_frame = tk.Frame(dialog)
     main_frame.pack(pady=5, padx=5, fill=tk.Y, side=tk.LEFT)
 
-    # Aggiungi i checkbox per i punti intermedi
+    
     for i, name in enumerate(prefixed_points.keys()):
         var = tk.IntVar()
         checkbox = tk.Checkbutton(main_frame, text=name, variable=var, onvalue=1, offvalue=0,
                                    command=lambda n=name, v=var: toggle_point(n, v))
         checkbox.grid(row=i, column=0, sticky=tk.W)
-        checkboxes[name] = var  # Aggiungi il checkbox al dizionario
+        checkboxes[name] = var  
     
     select_all_button = tk.Button(main_frame, text="Seleziona Tutti", command=select_all_points)
     select_all_button.grid(row=len(prefixed_points), column=1, pady=5)
@@ -106,27 +109,28 @@ def get_mandatory_points(mandatory_points):
     done_button = tk.Button(main_frame, text="Aggiungi", command=add_selected_points)
     done_button.grid(row=len(prefixed_points) + 1, column=1, pady=5)
 
-    # Frame per i checkbox delle mappe della griglia
+    
     map_frame = tk.Frame(dialog)
     map_frame.pack(pady=10, padx=10, fill=tk.Y, side=tk.RIGHT)
 
-    # Aggiungi i checkbox per le mappe della griglia
+    
     checkboxes_map = {}
     for i, map_name in enumerate(grid_maps):
         var_map = tk.IntVar()
         checkbox_map = tk.Checkbutton(map_frame, text=map_name, variable=var_map, onvalue=1, offvalue=0)
-        checkbox_map.grid(row=i, column=0, sticky=tk.W, padx=5, pady=2)  # Aggiungi spazio orizzontale e verticale
-        checkboxes_map[map_name] = var_map  # Aggiungi il checkbox al dizionario
+        checkbox_map.grid(row=i, column=0, sticky=tk.W, padx=5, pady=2)  
+        checkboxes_map[map_name] = var_map  
 
     dialog.wait_window()
 
-    return mandatory_points, selected_map  # Restituisci anche il nome della mappa selezionata
+    return punti_intermedi, selected_map  
 
-def trova_punto_vicino(start_point,mandatory_points,walls):
+# Funzione per trovare il punto più vicino a partire da un punto iniziale
+def trova_punto_vicino(start_point,punti_intermedi,walls):
     min_euristica = float('inf')
     prossimo_punto = None
                     
-    for punto in mandatory_points:
+    for punto in punti_intermedi:
         euristica = heuristics.manhattan_with_barriers(start_point, punto,walls)
         if euristica < min_euristica:
             min_euristica = euristica
@@ -134,6 +138,7 @@ def trova_punto_vicino(start_point,mandatory_points,walls):
             
     return prossimo_punto
 
+# Classe per rappresentare uno spot nella griglia
 class Spot:
     def __init__(self, row, col, width):
         self.row = row
@@ -194,6 +199,7 @@ class Spot:
     def __str__(self):
         return "({},{})".format(self.row, self.col)
 
+# Funzione per disegnare la griglia sulla finestra di gioco
 def draw_grid(win, rows, width):
     
     gap = width // rows
@@ -202,6 +208,7 @@ def draw_grid(win, rows, width):
         for j in range(rows):
             pygame.draw.line(win, WHITE, (j * gap, 0), (j * gap, width))
 
+# Funzione per disegnare gli spot sulla finestra di gioco
 def draw(win, grid):
     win.fill(WHITE)
 
@@ -216,19 +223,21 @@ def draw(win, grid):
 
     pygame.display.update()
 
-def make_grid(rows, width, mandatory_points):
+# Funzione per creare la griglia di spot
+def make_grid(rows, width, punti_intermedi):
     grid = []
     gap = width // rows
     for i in range(rows):
         grid.append([])
         for j in range(rows):
             spot = Spot(i, j, gap)
-            if mandatory_points and (i, j) in mandatory_points:
+            if punti_intermedi and (i, j) in punti_intermedi:
                 spot.make_points()
             grid[i].append(spot)
 
     return grid
 
+# Funzione per ottenere la posizione cliccata dall'utente nella finestra di gioco
 def get_clicked_pos(pos, rows, width):
     gap = width // rows
     y, x = pos
@@ -238,7 +247,8 @@ def get_clicked_pos(pos, rows, width):
 
     return row, col
 
-def make_grid_from_file(filename, width, mandatory_points):
+# Funzione per creare la griglia da un file JSON
+def make_grid_from_file(filename, width, punti_intermedi):
 
     if filename is None:
         raise ValueError("Il nome del file non può essere None")
@@ -266,12 +276,13 @@ def make_grid_from_file(filename, width, mandatory_points):
             elif (i, j) == end:
                 spot.make_end()
                 end = spot
-            elif mandatory_points and (i, j) in mandatory_points:
+            elif punti_intermedi and (i, j) in punti_intermedi:
                 spot.make_points()
             grid[i].append(spot)
 
-    return grid, start, end, rows, barrier, mandatory_points
+    return grid, start, end, rows, barrier, punti_intermedi
 
+# Funzione per contrassegnare gli spot lungo il percorso calcolato
 def mark_spots(start, end, grid, plan,win):
     
     x = start.row
@@ -301,7 +312,8 @@ def mark_spots(start, end, grid, plan,win):
     # Ensure end spot remains marked as end
     
     end.make_end()      
-    
+
+# Funzione per contrassegnare gli spot espansi durante la ricerca
 def mark_expanded(exp, grid):
     for e in exp:
         current_spot = grid[e[0]][e[1]]
@@ -309,49 +321,52 @@ def mark_expanded(exp, grid):
                continue
         current_spot.make_closed()
 
+# Funzione per contrassegnare i punti intermedi sulla griglia
 def mark_points(point, grid):
     for e in point:
         grid[e[0]][e[1]].make_points()
 
-def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
+
+# Funzione per trovare il percorso tramite l'algoritmo di ricerca selezionato
+def trova_percorso(rows,wall,start,end,punti_intermedi,search_algorithm):
 
     world = PathFinding.World(rows-1,rows-1,wall)
-    all_plan = []
+    percorso = []
     # Inizializzazione del punto corrente come punto di partenza
     initial_point = (start.row, start.col)
     final_point = (end.row,end.col)
 
-    if mandatory_points.__len__() != 0:
+    if punti_intermedi.__len__() != 0:
         # Calcolo dell'euristica tra il punto di partenza e il primo punto intermedio
-        prossimo_punto = trova_punto_vicino(initial_point,mandatory_points,wall)
+        prossimo_punto = trova_punto_vicino(initial_point,punti_intermedi,wall)
         p = PathFinding(world,(initial_point),(prossimo_punto),wall)
         current_point= prossimo_punto  
         plan = search_algorithm.solve(p)
 
         if plan:
-            all_plan.extend(plan)
-            mandatory_points.remove(prossimo_punto) 
+            percorso.extend(plan)
+            punti_intermedi.remove(prossimo_punto) 
         # Calcolo dell'euristica tra il punto più vicino lo start e un punto intermedio
 
-            while mandatory_points:
+            while punti_intermedi:
                 # Trova il punto intermedio più vicino al punto corrente
-                prossimo_punto = trova_punto_vicino(current_point, mandatory_points,wall)
+                prossimo_punto = trova_punto_vicino(current_point, punti_intermedi,wall)
                 # Calcola il percorso tra il punto corrente e il punto intermedio
                 p = PathFinding(world, current_point, prossimo_punto,wall)
                 plan = search_algorithm.solve(p)
 
                 if plan:
-                    all_plan.extend(plan)
+                    percorso.extend(plan)
                     # Aggiorna il punto corrente al punto appena trovato
                     current_point = prossimo_punto
                     # Rimuovi il punto intermedio appena trovato dalla lista dei punti intermedi
-                    mandatory_points.remove(prossimo_punto)
+                    punti_intermedi.remove(prossimo_punto)
         #Calcolo dell'euristica tra l'ultimo punto e il punto finale
         int_p = PathFinding(world,(current_point),(final_point),wall)
         int_plan = (search_algorithm.solve(int_p))
 
         if int_plan:
-            all_plan.extend(int_plan)
+            percorso.extend(int_plan)
 
     else : 
         final_p = PathFinding(world,(initial_point),(final_point),wall)
@@ -359,10 +374,11 @@ def trova_percorso(rows,wall,start,end,mandatory_points,search_algorithm):
 
         if final_plan:
     
-            all_plan.extend(final_plan)
+            percorso.extend(final_plan)
             
-    return all_plan
+    return percorso
 
+# Funzione per salvare la griglia in un file JSON
 def save_to_file(grid, start, end,map_name):
     barrier = list()
     for x in grid:
@@ -373,6 +389,8 @@ def save_to_file(grid, start, end,map_name):
     data = json.dumps(res,indent=4)
     with open(map_name, "w") as data_file:
         data_file.write(data)
+
+# Classe per rappresentare un bottone sulla finestra di gioco
 class Button:
     """Create a button, then blit the surface in the while loop"""
  
@@ -469,6 +487,7 @@ bottone_save = Button(
 
 clock = pygame.time.Clock()
 
+# Funzione principale del programma
 @click.command()
 @click.option('-w', '--width', default = WIDTH, help = "Width of the Windows")
 @click.option('-r', '--rows', default = 100, help = "Number of rows/columns in the map")
@@ -480,14 +499,14 @@ def main(width, rows, search_algorithm, filename):
     start = None
     end = None
     ROWS = rows
-    mandatory_points = set()
+    punti_intermedi = set()
 
     search_algorithm == 'ASTAR'
     search_algorithm = ASTARPathFinder(heuristics.manhattan_with_barriers,True)
 
-    mandatory_points,filename = get_mandatory_points(mandatory_points)
+    punti_intermedi,filename = get_punti_intermedi(punti_intermedi)
 
-    grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
+    grid, start, end, rows, wall,punti_intermedi = make_grid_from_file(filename, width, punti_intermedi)
 
     WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
     pygame.display.set_caption("A* Sorbitermica")
@@ -508,7 +527,7 @@ def main(width, rows, search_algorithm, filename):
             
             if event.type == pygame.MOUSEBUTTONDOWN:
 
-                if pygame.mouse.get_pressed()[0]:  # LEFT
+                if pygame.mouse.get_pressed()[0]:  
                     pos = pygame.mouse.get_pos()
                     if pos[0] < width and pos[1] < width:
                         row, col = get_clicked_pos(pos, rows, width)
@@ -523,7 +542,7 @@ def main(width, rows, search_algorithm, filename):
                             spot.make_barrier()
                             wall.add((row,col))
 
-            elif pygame.mouse.get_pressed()[2]: # RIGHT
+            elif pygame.mouse.get_pressed()[2]: 
                 pos = pygame.mouse.get_pos()
                 if pos[0] < width and pos[1] < width:
                     row, col = get_clicked_pos(pos, rows, width)
@@ -543,11 +562,11 @@ def main(width, rows, search_algorithm, filename):
                 if pos[0] < width and pos[1] < width:
                     row,col = get_clicked_pos(pos, rows, width)
                     spot=grid[row][col]
-                    if pos in mandatory_points:
-                        mandatory_points.remove((row,col))
+                    if pos in punti_intermedi:
+                        punti_intermedi.remove((row,col))
                     else: 
                         spot.make_points()
-                        mandatory_points.add((row,col))
+                        punti_intermedi.add((row,col))
 
             bottone_save.click_save(event,grid,start,end,filename)
 
@@ -555,21 +574,21 @@ def main(width, rows, search_algorithm, filename):
             if clicked_reset:
                 pygame.display.quit()
                 filename = None
-                mandatory_points = set()
-                mandatory_points,filename =get_mandatory_points(mandatory_points)
+                punti_intermedi = set()
+                punti_intermedi,filename =get_punti_intermedi(punti_intermedi)
 
                 WIN = pygame.display.set_mode((WIDTH1, WIDTH2))
                 pygame.display.set_caption("A* Sorbitermica")
                 
                 pygame.display.update()
                 
-                grid, start, end, rows, wall,mandatory_points = make_grid_from_file(filename, width, mandatory_points)
+                grid, start, end, rows, wall,punti_intermedi = make_grid_from_file(filename, width, punti_intermedi)
 
             clicked_genera = bottone_genera.click(event, grid, start, end)
             if clicked_genera:
                 now1 = time.time()   
                 
-                all_plan = trova_percorso(rows, wall, start, end, mandatory_points, search_algorithm)
+                percorso = trova_percorso(rows, wall, start, end, punti_intermedi, search_algorithm)
 
                 now2 = time.time()
                 
@@ -577,10 +596,10 @@ def main(width, rows, search_algorithm, filename):
 
                 print("Number of Expansion: {} in {} seconds".format(search_algorithm.expanded, now))
 
-                if all_plan is not None:
-                    print(all_plan)
-                    print("Cost of the plan is: {}".format(len(all_plan)))
-                    mark_spots(start, end, grid, all_plan, WIN)
+                if percorso is not None:
+                    print(percorso)
+                    print("Cost of the plan is: {}".format(len(percorso)))
+                    mark_spots(start, end, grid, percorso, WIN)
                     draw(WIN, grid)
                     pygame.display.update()  
                 
