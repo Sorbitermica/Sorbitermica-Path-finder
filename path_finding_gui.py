@@ -7,7 +7,7 @@ import json
 import click 
 import time
 import tkinter as tk
-import json
+
 
 # Definizione delle costanti dei colori e delle dimensioni della finestra
 WIDTH1 = 1200
@@ -325,7 +325,6 @@ def mark_expanded(exp, grid):
 def mark_points(point, grid):
     for e in point:
         grid[e[0]][e[1]].make_points()
-
 
 # Funzione per trovare il percorso tramite l'algoritmo di ricerca selezionato
 def trova_percorso(rows,wall,start,end,punti_intermedi,search_algorithm):

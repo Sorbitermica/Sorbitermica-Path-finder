@@ -72,3 +72,9 @@ class SearchAlgorithm:
             sol.insert(0, node.action)
             node = node.parent
         return sol
+
+
+
+
+
+

@@ -20,3 +20,9 @@ def manhattan_with_barriers(punto1, punto2, barriere) -> int:
     barrier_cost = sum(0.1 for barriera in barriere if (barriera[0] > min(x1, x2) and barriera[0] < max(x1, x2) and
                                                          barriera[1] > min(y1, y2) and barriera[1] < max(y1, y2)))
     return dx + dy + barrier_cost
+
+
+
+
+
+
